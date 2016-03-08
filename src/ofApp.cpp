@@ -17,6 +17,8 @@ void ofApp::setup(){
   ofSetFrameRate(20);
   setupContourFinder();
   setupGUI();
+  
+  sender.setup("127.0.0.1", 12345);
 }
 
 void ofApp::setupGUI()
@@ -38,7 +40,7 @@ void ofApp::setupGUI()
 
 void ofApp::setupContourFinder()
 {
-  contourFinder.setMinAreaRadius(10);
+  contourFinder.setMinAreaRadius(1);
   contourFinder.setMaxAreaRadius(200);
   trackingColorMode = TRACK_COLOR_RGB;
   // TRACK_COLOR_RGB, TRACK_COLOR_HSV, TRACK_COLOR_H, TRACK_COLOR_HS
@@ -80,6 +82,8 @@ void ofApp::draw(){
   ofSetColor(targetColor);
   ofDrawRectangle(0, 0, 64, 64);
   gui.draw();
+  
+  sender.sendBundle(bundle);
 }
 
 
@@ -98,6 +102,7 @@ cv::Mat ofApp::getROIImage()
   ROIheight = ofClamp(ROIheight, 1, 480 - ROIy - 1);
   cv::Rect crop_roi = cv::Rect(ROIx, ROIy, ROIwidth, ROIheight);
   crop = cam_mat(crop_roi).clone();
+  bundle.addMessage(msgOsc(0, 0, 1));
   return crop;
 }
 
@@ -162,7 +167,11 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
 
 }
 
-void ofApp::sendOsc(int x, int y, int index){
+ofxOscMessage ofApp::msgOsc(int x, int y, int index){
   ofxOscMessage m;
-  
+  m.setAddress("/blob_"+ofToString(index));
+  m.addInt32Arg(x);
+  m.addInt32Arg(y);
+  m.addInt32Arg(index);
+  return m;
 }

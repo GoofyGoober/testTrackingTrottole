@@ -5,6 +5,7 @@
 #include "ofxCv.h"
 #include "ofxGui.h"
 #include "ofxOpenCv.h"
+#include "ofxOsc.h"
 
 class ofApp : public ofBaseApp{
 
@@ -24,7 +25,7 @@ class ofApp : public ofBaseApp{
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
-  void sendOsc(int x, int y, int index);
+  ofxOscMessage msgOsc(int x, int y, int index);
   void  setupContourFinder();
   ofParameter<float> threshold;
   ofParameter<float> minArea;
@@ -38,7 +39,8 @@ class ofApp : public ofBaseApp{
   ofParameterGroup group;
   void setupGUI();
   cv::Mat   getROIImage();
-  
+  ofxOscSender sender;
+  ofxOscBundle bundle;
 //  ofParamete<float>
   
   
