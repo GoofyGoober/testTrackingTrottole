@@ -51,4 +51,6 @@ class ofApp : public ofBaseApp{
   ofParameter<bool> drawWebCam;
   cv::Mat                   cam_mat;
   cv::Mat                   crop;
+  ofColor getBlobColor(int x, int y);
+  int getBlobColorIndex(ofColor color);
 };

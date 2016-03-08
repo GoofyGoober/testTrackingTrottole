@@ -5,19 +5,20 @@ using namespace cv;
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-  grabber.setGrabber(std::make_shared<ofxPS3EyeGrabber>());
-//  grabber.setPixelFormat(OF_PIXELS_NATIVE);
-  
+//  grabber.setGrabber(std::make_shared<ofxPS3EyeGrabber>());
   grabber.setup(640, 480);
-  grabber.getGrabber<ofxPS3EyeGrabber>()->setAutogain(true);
-  grabber.getGrabber<ofxPS3EyeGrabber>()->setAutoWhiteBalance(true);
-  grabber.getGrabber<ofxPS3EyeGrabber>()->setDesiredFrameRate(20);
-  ofSetFrameRate(60);
-  
+//  grabber.getGrabber<ofxPS3EyeGrabber>()->setAutogain(false);
+//  grabber.getGrabber<ofxPS3EyeGrabber>()->setAutoWhiteBalance(false);
+//  grabber.getGrabber<ofxPS3EyeGrabber>()->setBrightness(0);
+//  grabber.getGrabber<ofxPS3EyeGrabber>()->setGain(0);
+//  grabber.getGrabber<ofxPS3EyeGrabber>()->setExposure(58);
+//  grabber.getGrabber<ofxPS3EyeGrabber>()->setDesiredFrameRate(20);
+//  grabber.getGrabber<ofxPS3EyeGrabber>()->setRedBalance(102);
+//  grabber.getGrabber<ofxPS3EyeGrabber>()->setBlueBalance(123);
+//  grabber.getGrabber<ofxPS3EyeGrabber>()->setGreenBalance(0);
   ofSetFrameRate(20);
   setupContourFinder();
   setupGUI();
-  
   sender.setup("127.0.0.1", 12345);
 }
 
@@ -26,8 +27,8 @@ void ofApp::setupGUI()
   gui.setup();
   group.setName("Gruppo");
   group.add(threshold.set("Threshold", 50, 0, 255));
-  group.add(minArea.set("Min area", 50, 0, 20));
-  group.add(maxArea.set("Max area", 2000, 0, 100));
+  group.add(minArea.set("Min area", 50, 0, 640*480));
+  group.add(maxArea.set("Max area", 2000, 0, 640*480));
   group.add(bInvert.set("Invert", false));
   group.add(ROIx.set("ROI x", 0, 0, 640));
   group.add(ROIy.set("ROI y", 0, 0, 480));
@@ -50,12 +51,42 @@ void ofApp::setupContourFinder()
 void ofApp::update(){
   grabber.update();
   if(grabber.isFrameNew()) {
+    
+//  grabber.getGrabber<ofxPS3EyeGrabber>()->setBrightness(0);
+//  grabber.getGrabber<ofxPS3EyeGrabber>()->setGain(0);
+//  grabber.getGrabber<ofxPS3EyeGrabber>()->setExposure(58);
+//  grabber.getGrabber<ofxPS3EyeGrabber>()->setDesiredFrameRate(20);
+//  grabber.getGrabber<ofxPS3EyeGrabber>()->setRedBalance(102);
+//  grabber.getGrabber<ofxPS3EyeGrabber>()->setBlueBalance(123);
+//  grabber.getGrabber<ofxPS3EyeGrabber>()->setGreenBalance(0);
+    
     contourFinder.setMaxArea(maxArea);
     contourFinder.setMinArea(minArea);
     contourFinder.setThreshold(threshold);
     contourFinder.setInvert(bInvert);
     contourFinder.findContours(getROIImage());
+    
+    
+    int totBlob = contourFinder.getContours().size();
+    for(int a = 0; a < totBlob; a++)
+    {
+      float x = (contourFinder.getCentroid(a).x/ROIwidth) * 100;
+      float y = (contourFinder.getCentroid(a).y/ROIheight) * 100;
+      ofColor yellow = ofColor(0,0,200);
+      ofColor found = getBlobColor(contourFinder.getCentroid(a).x, contourFinder.getCentroid(a).y);
+      ofColor difference = found - yellow;
+      cout << "difference " << difference << endl;
+//      bundle.addMessage(msgOsc(x,y,a));
+      ofxOscMessage m = msgOsc(x,y,a);
+      sender.sendMessage(m);
+    }
+    
   }
+}
+
+int ofApp::getBlobColorIndex(ofColor color)
+{
+  return 1;
 }
 
 //--------------------------------------------------------------
@@ -72,8 +103,8 @@ void ofApp::draw(){
   ofPushMatrix();
   ofTranslate(ROIx, ROIy);
   ofDrawRectangle(0, 0, ROIwidth, ROIheight);
-  
   contourFinder.draw();
+  
   ofPopMatrix();
   ofPopStyle();
   ofFill();
@@ -82,27 +113,18 @@ void ofApp::draw(){
   ofSetColor(targetColor);
   ofDrawRectangle(0, 0, 64, 64);
   gui.draw();
-  
-  sender.sendBundle(bundle);
 }
 
 
 cv::Mat ofApp::getROIImage()
 {
-  // convertColor(cam, thresh, CV_RGB2GRAY);
-  // float thresholdValue = ofMap(mouseX, 0, ofGetWidth(), 0, 255);
-  // threshold(thresh, thresholdValue);
-  // thresh.update();
   cam_mat = toCv(grabber);
   ROIx = ofClamp(ROIx, 1, 640 - 200);
   ROIy = ofClamp(ROIy, 1, 400);
-//  ROIy = 480 - ROIy;
-  
   ROIwidth = ofClamp(ROIwidth, 1, 640 - 50 -ROIx-1);
   ROIheight = ofClamp(ROIheight, 1, 480 - ROIy - 1);
   cv::Rect crop_roi = cv::Rect(ROIx, ROIy, ROIwidth, ROIheight);
   crop = cam_mat(crop_roi).clone();
-  bundle.addMessage(msgOsc(0, 0, 1));
   return crop;
 }
 
@@ -167,11 +189,19 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
 
 }
 
+ofColor ofApp::getBlobColor(int x, int y)
+{
+  return grabber.getPixels().getColor(ROIx + x, ROIy + y);
+}
+
 ofxOscMessage ofApp::msgOsc(int x, int y, int index){
   ofxOscMessage m;
   m.setAddress("/blob_"+ofToString(index));
   m.addInt32Arg(x);
   m.addInt32Arg(y);
+  ofLog() << "*******";
+  cout << x << endl;
+  cout << y << endl;
   m.addInt32Arg(index);
   return m;
 }
