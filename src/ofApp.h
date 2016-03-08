@@ -25,14 +25,28 @@ class ofApp : public ofBaseApp{
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
+
   ofxOscMessage msgOsc(int x, int y, int index);
   void  setupContourFinder();
   ofParameter<float> threshold;
   ofParameter<float> minArea;
   ofParameter<float> maxArea;
+  
+  // webcam gui
+  ofParameter<int> maxArea;
+  ofParameter<int> exp;
+  ofParameter<int> framerate;
+  ofParameter<int> redBalance;
+  ofParameter<int> greenBalance;
+  ofParameter<int> blueBalance;
+  ofParameter<int> brightness;
+  ofParameter<int> gain;
+
+
   ofParameter<bool> bInvert;
-    ofxCv::ContourFinder contourFinder;
-    ofVideoGrabber grabber;
+
+  ofxCv::ContourFinder contourFinder;
+  ofVideoGrabber grabber;
   ofxCv::TrackingColorMode trackingColorMode;
   ofColor targetColor;
   ofxPanel gui;
