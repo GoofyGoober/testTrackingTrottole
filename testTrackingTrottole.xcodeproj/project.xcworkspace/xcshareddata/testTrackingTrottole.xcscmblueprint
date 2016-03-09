@@ -1,0 +1,30 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "7907F93CDA336AADBA81DF96E409EEA51FB382AA",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "7907F93CDA336AADBA81DF96E409EEA51FB382AA" : 0,
+    "37526DA425E5430474A14FBFA1BC4525160B5FC1" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "95817460-3180-425F-8F1F-85BE9E038881",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "7907F93CDA336AADBA81DF96E409EEA51FB382AA" : "testTrackingTrottole\/",
+    "37526DA425E5430474A14FBFA1BC4525160B5FC1" : "..\/..\/addons\/ofxCv"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "testTrackingTrottole",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "testTrackingTrottole.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/kylemcdonald\/ofxCv.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "37526DA425E5430474A14FBFA1BC4525160B5FC1"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/GoofyGoober\/testTrackingTrottole.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "7907F93CDA336AADBA81DF96E409EEA51FB382AA"
+    }
+  ]
+}

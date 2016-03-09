@@ -5,38 +5,68 @@ using namespace cv;
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-//  grabber.setGrabber(std::make_shared<ofxPS3EyeGrabber>());
+  grabber.setGrabber(std::make_shared<ofxPS3EyeGrabber>());
+
   grabber.setup(640, 480);
-//  grabber.getGrabber<ofxPS3EyeGrabber>()->setAutogain(false);
-//  grabber.getGrabber<ofxPS3EyeGrabber>()->setAutoWhiteBalance(false);
-//  grabber.getGrabber<ofxPS3EyeGrabber>()->setBrightness(0);
-//  grabber.getGrabber<ofxPS3EyeGrabber>()->setGain(0);
-//  grabber.getGrabber<ofxPS3EyeGrabber>()->setExposure(58);
-//  grabber.getGrabber<ofxPS3EyeGrabber>()->setDesiredFrameRate(20);
-//  grabber.getGrabber<ofxPS3EyeGrabber>()->setRedBalance(102);
-//  grabber.getGrabber<ofxPS3EyeGrabber>()->setBlueBalance(123);
-//  grabber.getGrabber<ofxPS3EyeGrabber>()->setGreenBalance(0);
+    grabber.getGrabber<ofxPS3EyeGrabber>()->setAutogain(false);
+    grabber.getGrabber<ofxPS3EyeGrabber>()->setAutoWhiteBalance(false);
+        setupGrabber();
   ofSetFrameRate(20);
   setupContourFinder();
   setupGUI();
   sender.setup("127.0.0.1", 12345);
 }
 
+void ofApp::setupGrabber(){
+    grabber.getGrabber<ofxPS3EyeGrabber>()->setExposure(exp);
+    grabber.getGrabber<ofxPS3EyeGrabber>()->setDesiredFrameRate(framerate);
+    grabber.getGrabber<ofxPS3EyeGrabber>()->setRedBalance(redBalance);
+    grabber.getGrabber<ofxPS3EyeGrabber>()->setBlueBalance(blueBalance);
+    grabber.getGrabber<ofxPS3EyeGrabber>()->setGreenBalance(greenBalance);
+    grabber.getGrabber<ofxPS3EyeGrabber>()->setBrightness(brightness);
+    grabber.getGrabber<ofxPS3EyeGrabber>()->setGain(gain);
+}
+
 void ofApp::setupGUI()
 {
   gui.setup();
-  group.setName("Gruppo");
+  group.setName("Capture");
   group.add(threshold.set("Threshold", 50, 0, 255));
-  group.add(minArea.set("Min area", 50, 0, 640*480));
-  group.add(maxArea.set("Max area", 2000, 0, 640*480));
+  group.add(minArea.set("Min area", 1, 0, 50));
+  group.add(maxArea.set("Max area", 300, 0, 300));
   group.add(bInvert.set("Invert", false));
   group.add(ROIx.set("ROI x", 0, 0, 640));
   group.add(ROIy.set("ROI y", 0, 0, 480));
   group.add(ROIwidth.set("ROI width", 100, 10, 640));
-  group.add(ROIheight.set("ROI heighy", 100, 10, 480));
+  group.add(ROIheight.set("ROI height", 100, 10, 480));
   group.add(drawWebCam.set("Draw webcam", true));
+
+  // webcam gui
+  groupWebcam.setName("Webcam");
+  groupWebcam.add(exp.set("exposure", 58,0,255));
+  groupWebcam.add(framerate.set("framerate", 20,0,60));
+  groupWebcam.add(redBalance.set("red", 102,0,255));
+  groupWebcam.add(greenBalance.set("green", 0,0,255));
+  groupWebcam.add(blueBalance.set("blue", 123,0,255));
+  groupWebcam.add(brightness.set("bright", 0,0,255));
+  groupWebcam.add(gain.set("gain", 0,0,60));
+  
+  exp.addListener(this,&ofApp::gainChanged);
+  framerate.addListener(this,&ofApp::gainChanged);
+  redBalance.addListener(this,&ofApp::gainChanged);
+  greenBalance.addListener(this,&ofApp::gainChanged);
+  blueBalance.addListener(this,&ofApp::gainChanged);
+  brightness.addListener(this,&ofApp::gainChanged);
+  gain.addListener(this,&ofApp::gainChanged);
+    
+
   gui.add(group);
+  gui.add(groupWebcam);
   gui.loadFromFile("settings.xml");
+}
+
+void ofApp::gainChanged(int & circleResolution){
+    setupGrabber();
 }
 
 void ofApp::setupContourFinder()
@@ -50,38 +80,37 @@ void ofApp::setupContourFinder()
 //--------------------------------------------------------------
 void ofApp::update(){
   grabber.update();
+    
   if(grabber.isFrameNew()) {
-    
-//  grabber.getGrabber<ofxPS3EyeGrabber>()->setBrightness(0);
-//  grabber.getGrabber<ofxPS3EyeGrabber>()->setGain(0);
-//  grabber.getGrabber<ofxPS3EyeGrabber>()->setExposure(58);
-//  grabber.getGrabber<ofxPS3EyeGrabber>()->setDesiredFrameRate(20);
-//  grabber.getGrabber<ofxPS3EyeGrabber>()->setRedBalance(102);
-//  grabber.getGrabber<ofxPS3EyeGrabber>()->setBlueBalance(123);
-//  grabber.getGrabber<ofxPS3EyeGrabber>()->setGreenBalance(0);
-    
+      setupFinder();
+    searchBlobs(contourFinder);
+  }
+}
+
+void ofApp::setupFinder(){
     contourFinder.setMaxArea(maxArea);
     contourFinder.setMinArea(minArea);
     contourFinder.setThreshold(threshold);
+    contourFinder.setSimplify(true);
     contourFinder.setInvert(bInvert);
     contourFinder.findContours(getROIImage());
-    
-    
-    int totBlob = contourFinder.getContours().size();
+}
+
+void ofApp::searchBlobs(ofxCv::ContourFinder finder){
+    int totBlob = finder.getContours().size();
     for(int a = 0; a < totBlob; a++)
     {
-      float x = (contourFinder.getCentroid(a).x/ROIwidth) * 100;
-      float y = (contourFinder.getCentroid(a).y/ROIheight) * 100;
-      ofColor yellow = ofColor(0,0,200);
-      ofColor found = getBlobColor(contourFinder.getCentroid(a).x, contourFinder.getCentroid(a).y);
-      ofColor difference = found - yellow;
-      cout << "difference " << difference << endl;
-//      bundle.addMessage(msgOsc(x,y,a));
-      ofxOscMessage m = msgOsc(x,y,a);
-      sender.sendMessage(m);
+        float xCenter = finder.getCentroid(a).x/ROIwidth;
+        float yCenter = finder.getCentroid(a).y/ROIwidth;
+        float x = xCenter * 100;
+        float y = yCenter * 100;
+        ofColor yellow = ofColor(0,0,200);
+        ofColor found = getBlobColor(xCenter, yCenter);
+        ofColor difference = found - yellow;
+        cout << "difference: " << difference << endl;
+        ofxOscMessage m = msgOsc(x,y,a,1);
+        sender.sendMessage(m);
     }
-    
-  }
 }
 
 int ofApp::getBlobColorIndex(ofColor color)
@@ -94,10 +123,7 @@ void ofApp::draw(){
   ofSetColor(255);
   if(drawWebCam)
     grabber.draw(0,0);
-  drawHighlightString(ofToString((int) ofGetFrameRate()) + " fps", 10, 20);
-  drawHighlightString(ofToString((int) threshold) + " threshold", 10, 40);
-  drawHighlightString(trackingColorMode == TRACK_COLOR_HSV ? "HSV tracking" : "RGB tracking", 10, 60);
-  
+
   ofPushStyle();
   ofNoFill();
   ofPushMatrix();
@@ -118,13 +144,13 @@ void ofApp::draw(){
 
 cv::Mat ofApp::getROIImage()
 {
-  cam_mat = toCv(grabber);
-  ROIx = ofClamp(ROIx, 1, 640 - 200);
-  ROIy = ofClamp(ROIy, 1, 400);
-  ROIwidth = ofClamp(ROIwidth, 1, 640 - 50 -ROIx-1);
+  cam_mat   = toCv(grabber);
+  ROIx      = ofClamp(ROIx, 1, 640 - 200);
+  ROIy      = ofClamp(ROIy, 1, 400);
+  ROIwidth  = ofClamp(ROIwidth, 1, 640 - 50 - ROIx -1);
   ROIheight = ofClamp(ROIheight, 1, 480 - ROIy - 1);
   cv::Rect crop_roi = cv::Rect(ROIx, ROIy, ROIwidth, ROIheight);
-  crop = cam_mat(crop_roi).clone();
+  crop      = cam_mat(crop_roi).clone();
   return crop;
 }
 
@@ -194,14 +220,15 @@ ofColor ofApp::getBlobColor(int x, int y)
   return grabber.getPixels().getColor(ROIx + x, ROIy + y);
 }
 
-ofxOscMessage ofApp::msgOsc(int x, int y, int index){
+ofxOscMessage ofApp::msgOsc(int x, int y, int index, bool accesoSpento){
   ofxOscMessage m;
   m.setAddress("/blob_"+ofToString(index));
   m.addInt32Arg(x);
   m.addInt32Arg(y);
-  ofLog() << "*******";
-  cout << x << endl;
-  cout << y << endl;
-  m.addInt32Arg(index);
+    if (accesoSpento){
+        m.addInt32Arg(1);
+    } else {
+        m.addInt32Arg(0);
+    }
   return m;
 }

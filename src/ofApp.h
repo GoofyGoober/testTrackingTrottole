@@ -25,15 +25,18 @@ class ofApp : public ofBaseApp{
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
+        void gainChanged(int & circleResolution);
+        void setupGrabber();
+        void searchBlobs(ofxCv::ContourFinder finder);
+        void setupFinder();
 
-  ofxOscMessage msgOsc(int x, int y, int index);
+  ofxOscMessage msgOsc(int x, int y, int index, bool accesoSpento);
   void  setupContourFinder();
   ofParameter<float> threshold;
   ofParameter<float> minArea;
   ofParameter<float> maxArea;
   
   // webcam gui
-  ofParameter<int> maxArea;
   ofParameter<int> exp;
   ofParameter<int> framerate;
   ofParameter<int> redBalance;
@@ -51,11 +54,13 @@ class ofApp : public ofBaseApp{
   ofColor targetColor;
   ofxPanel gui;
   ofParameterGroup group;
+  ofParameterGroup groupWebcam;
+    
   void setupGUI();
   cv::Mat   getROIImage();
   ofxOscSender sender;
   ofxOscBundle bundle;
-//  ofParamete<float>
+    //ofParamete<float>
   
   
   ofParameter<float> ROIx;
