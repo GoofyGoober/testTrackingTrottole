@@ -13,25 +13,16 @@ class ofApp : public ofBaseApp{
 		void setup();
 		void update();
 		void draw();
-
-		void keyPressed(int key);
-		void keyReleased(int key);
-		void mouseMoved(int x, int y );
-		void mouseDragged(int x, int y, int button);
 		void mousePressed(int x, int y, int button);
-		void mouseReleased(int x, int y, int button);
-		void mouseEntered(int x, int y);
-		void mouseExited(int x, int y);
-		void windowResized(int w, int h);
-		void dragEvent(ofDragInfo dragInfo);
-		void gotMessage(ofMessage msg);
+
         void gainChanged(int & circleResolution);
+        void colorChanged(int & colorNew);
         void setupGrabber();
-        void searchBlobs(ofxCv::ContourFinder &_finder);
-        void setupFinder(ofxCv::ContourFinder &_finder);
+        void searchBlobs(ofxCv::ContourFinder &_finder, int i);
+        void setupFinder(ofxCv::ContourFinder &_finder, int a);
         void setupWebcamGui(ofParameterGroup &_group);
         void setupMaskGui(ofParameterGroup &_group);
-        void getCenterAndSendOsc(ofxCv::ContourFinder _finder, int _a);
+        void getCenterAndSendOsc(ofxCv::ContourFinder _finder, int _numCentroid, int _channel);
 
   ofxOscMessage msgOsc(int x, int y, int index, bool accesoSpento);
   void  setupContourFinder();
@@ -54,10 +45,11 @@ class ofApp : public ofBaseApp{
   ofParameter<bool> bInvert;
 
     
-    vector<ofxCv::ContourFinder> countoursFinders;
-    vector< ofParameter<float> > thresholds;
-    vector< ofParameter<float> > minAreas;
-    vector< ofParameter<float> > maxAreas;
+  vector<ofxCv::ContourFinder> countoursFinders;
+  vector< ofParameter<float> > thresholds;
+  vector< ofParameter<float> > minAreas;
+  vector< ofParameter<float> > maxAreas;
+  vector< ofParameter<int> > colors;
   ofxCv::ContourFinder contourFinder;
   ofVideoGrabber grabber;
   ofxCv::TrackingColorMode trackingColorMode;
@@ -81,5 +73,4 @@ class ofApp : public ofBaseApp{
   cv::Mat                   cam_mat;
   cv::Mat                   crop;
   ofColor getBlobColor(int x, int y);
-  int getBlobColorIndex(ofColor color);
 };

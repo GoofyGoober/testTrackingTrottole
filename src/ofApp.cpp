@@ -34,18 +34,27 @@ void ofApp::setupGUI()
 {
   gui.setup();
   group.setName("Capture");
+    
+    setupMaskGui(group);
+    gui.add(group);
 for(int a = 0; a < countoursFinders.size(); a++){
-    group.add(thresholds[a].set("threshold "+ofToString(a), 50,0,255));
-    group.add(minAreas[a].set("Min area "+ofToString(a), 50,0,255));
-    group.add(maxAreas[a].set("Max area "+ofToString(a), 50,0,255));
+    ofParameterGroup group_contour;
+    group_contour.setName(ofToString(a));
+    group_contour.add(thresholds[a].set("threshold", 50,   0, 255));
+    group_contour.add(minAreas[a].set(  "Min area", 50,   0, 255));
+    group_contour.add(maxAreas[a].set(  "Max area", 50,   0, 255));
+    group_contour.add(colors[a].set(    "Colors", a*10, 0, 255));
+    colors[a].addListener(this,&ofApp::colorChanged);
+    gui.add(group_contour);
   }
-
-  setupMaskGui(group);
+    
   setupWebcamGui(groupWebcam);
-  gui.add(group);
   gui.add(groupWebcam);
+
   gui.loadFromFile("settings.xml");
 }
+
+
 
 void ofApp::setupMaskGui(ofParameterGroup &_group){
     _group.add(ROIx.set("ROI x", 0, 0, 640));
@@ -76,12 +85,15 @@ void ofApp::setupWebcamGui(ofParameterGroup &_group){
     gain.addListener(this,&ofApp::gainChanged);
 }
 
+void ofApp::colorChanged(int & colorNew){
+    
+}
+
 void ofApp::gainChanged(int & circleResolution){
     setupGrabber();
 }
 
-void ofApp::setupContourFinder()
-{
+void ofApp::setupContourFinder(){
     for(int a = 0 ; a <= NUM_OF_FINDERS; a++)
     {
         ofxCv::ContourFinder temp;
@@ -89,6 +101,7 @@ void ofApp::setupContourFinder()
         thresholds.push_back(128);
         minAreas.push_back(128);
         maxAreas.push_back(128);
+        colors.push_back(1);
         
     }
   contourFinder.setMinAreaRadius(1);
@@ -102,47 +115,43 @@ void ofApp::update(){
   grabber.update();
     
   if(grabber.isFrameNew()) {
-      for(int a = 0; a < countoursFinders.size(); a++){
-        setupFinder(countoursFinders[a]);
-        searchBlobs(countoursFinders[a]);
+      for(int channel = 0; channel < countoursFinders.size(); channel++){
+        setupFinder(countoursFinders[channel], channel);
+        searchBlobs(countoursFinders[channel], channel);
       }
   }
 }
 
-void ofApp::setupFinder(ofxCv::ContourFinder &_finder){
-    _finder.setMaxArea(maxArea);
-    _finder.setMinArea(minArea);
-    _finder.setThreshold(threshold);
+void ofApp::setupFinder(ofxCv::ContourFinder &_finder, int a){
+    _finder.setMaxArea(maxAreas[a]);
+    _finder.setMinArea(minAreas[a]);
+    _finder.setThreshold(thresholds[a]);
     _finder.setSimplify(true);
     _finder.setInvert(bInvert);
     _finder.findContours(getROIImage());
 }
 
-void ofApp::searchBlobs(ofxCv::ContourFinder &_finder){
+void ofApp::searchBlobs(ofxCv::ContourFinder &_finder, int _channel){
     int totBlob = _finder.getContours().size();
-    for(int a = 0; a < totBlob; a++)
+    for(int i = 0; i < totBlob; i++)
     {
-        getCenterAndSendOsc(_finder, a);
+        getCenterAndSendOsc(_finder, i, _channel);
     }
 }
 
-void ofApp::getCenterAndSendOsc(ofxCv::ContourFinder _finder, int _a){
-    float xCenter = _finder.getCentroid(_a).x/ROIwidth;
-    float yCenter = _finder.getCentroid(_a).y/ROIwidth;
+void ofApp::getCenterAndSendOsc(ofxCv::ContourFinder _finder, int _numCentroid, int _channel){
+    float xCenter = _finder.getCentroid(_numCentroid).x/ROIwidth;
+    float yCenter = _finder.getCentroid(_numCentroid).y/ROIwidth;
     float x = xCenter * 100;
     float y = yCenter * 100;
     ofColor yellow = ofColor(0,0,200);
     ofColor found = getBlobColor(xCenter, yCenter);
     ofColor difference = found - yellow;
-    cout << "difference: " << difference << endl;
-    ofxOscMessage m = msgOsc(x,y,_a,1);
+//    cout << "difference: " << difference << endl;
+    ofxOscMessage m = msgOsc(x,y,_channel,true);
     sender.sendMessage(m);
 }
 
-int ofApp::getBlobColorIndex(ofColor color)
-{
-  return 1;
-}
 
 //--------------------------------------------------------------
 void ofApp::draw(){
@@ -155,7 +164,13 @@ void ofApp::draw(){
   ofPushMatrix();
   ofTranslate(ROIx, ROIy);
   ofDrawRectangle(0, 0, ROIwidth, ROIheight);
-  contourFinder.draw();
+    for(int a = 0; a < countoursFinders.size(); a++){
+        ofColor color;
+        color.setHsb(colors[a], 255, 255);
+        
+        ofSetColor(color);
+        countoursFinders[a].draw();
+    }
   
   ofPopMatrix();
   ofPopStyle();
@@ -180,65 +195,13 @@ cv::Mat ofApp::getROIImage()
   return crop;
 }
 
-//--------------------------------------------------------------
-void ofApp::keyReleased(int key){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseMoved(int x, int y ){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseDragged(int x, int y, int button){
-
-}
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button) {
   targetColor = grabber.getPixels().getColor(x, y);
-  contourFinder.setTargetColor(targetColor, trackingColorMode);
-}
-
-void ofApp::keyPressed(int key) {
-  if(key == 'h') {
-    trackingColorMode = TRACK_COLOR_HSV;
+  for(int a = 0; a < countoursFinders.size(); a++){
+      countoursFinders[a].setTargetColor(targetColor, trackingColorMode);
   }
-  if(key == 'r') {
-    trackingColorMode = TRACK_COLOR_RGB;
-  }
-  contourFinder.setTargetColor(targetColor, trackingColorMode);
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseReleased(int x, int y, int button){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseEntered(int x, int y){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseExited(int x, int y){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::windowResized(int w, int h){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::gotMessage(ofMessage msg){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::dragEvent(ofDragInfo dragInfo){ 
-
 }
 
 ofColor ofApp::getBlobColor(int x, int y)
@@ -246,9 +209,9 @@ ofColor ofApp::getBlobColor(int x, int y)
   return grabber.getPixels().getColor(ROIx + x, ROIy + y);
 }
 
-ofxOscMessage ofApp::msgOsc(int x, int y, int index, bool accesoSpento){
+ofxOscMessage ofApp::msgOsc(int x, int y, int channel, bool accesoSpento){
   ofxOscMessage m;
-  m.setAddress("/blob_"+ofToString(index));
+  m.setAddress("/blob_"+ofToString(channel));
   m.addInt32Arg(x);
   m.addInt32Arg(y);
     if (accesoSpento){
