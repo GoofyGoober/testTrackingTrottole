@@ -33,23 +33,22 @@ void ofApp::setupGrabber(){
 void ofApp::setupGUI()
 {
   gui.setup();
-  group.setName("Capture");
     
     setupMaskGui(group);
-    gui.add(group);
-for(int a = 0; a < countoursFinders.size(); a++){
+    
+    setupWebcamGui(groupWebcam);
+  
+  for(int a = 0; a < countoursFinders.size(); a++){
     ofParameterGroup group_contour;
-    group_contour.setName(ofToString(a));
-    group_contour.add(thresholds[a].set("threshold", 50,   0, 255));
-    group_contour.add(minAreas[a].set(  "Min area", 50,   0, 255));
-    group_contour.add(maxAreas[a].set(  "Max area", 50,   0, 255));
-    group_contour.add(colors[a].set(    "Colors", a*10, 0, 255));
+    group_contour.setName("Canale-"+ofToString(a));
+    group_contour.add(thresholds[a].set("threshold", 0,   0, 255));
+    group_contour.add(minAreas[a].set("Min area", 1,   0, 255));
+    group_contour.add(maxAreas[a].set("Max area", 50,   0, 255));
+    group_contour.add(colors[a].set("Colors", a*20, 0, 255));
     colors[a].addListener(this,&ofApp::colorChanged);
     gui.add(group_contour);
   }
     
-  setupWebcamGui(groupWebcam);
-  gui.add(groupWebcam);
 
   gui.loadFromFile("settings.xml");
 }
@@ -57,12 +56,15 @@ for(int a = 0; a < countoursFinders.size(); a++){
 
 
 void ofApp::setupMaskGui(ofParameterGroup &_group){
+    _group.setName("Mask");
     _group.add(ROIx.set("ROI x", 0, 0, 640));
     _group.add(ROIy.set("ROI y", 0, 0, 480));
     _group.add(ROIwidth.set("ROI width", 100, 10, 640));
     _group.add(ROIheight.set("ROI height", 100, 10, 480));
     _group.add(drawWebCam.set("Draw webcam", true));
     _group.add(bInvert.set("Invert", true));
+    
+    gui.add(_group);
 }
 
 void ofApp::setupWebcamGui(ofParameterGroup &_group){
@@ -83,6 +85,8 @@ void ofApp::setupWebcamGui(ofParameterGroup &_group){
     blueBalance.addListener(this,&ofApp::gainChanged);
     brightness.addListener(this,&ofApp::gainChanged);
     gain.addListener(this,&ofApp::gainChanged);
+    
+      gui.add(_group);
 }
 
 void ofApp::colorChanged(int & colorNew){
@@ -144,10 +148,9 @@ void ofApp::getCenterAndSendOsc(ofxCv::ContourFinder _finder, int _numCentroid, 
     float yCenter = _finder.getCentroid(_numCentroid).y/ROIwidth;
     float x = xCenter * 100;
     float y = yCenter * 100;
-    ofColor yellow = ofColor(0,0,200);
-    ofColor found = getBlobColor(xCenter, yCenter);
-    ofColor difference = found - yellow;
-//    cout << "difference: " << difference << endl;
+//    ofColor yellow = ofColor(0,0,200);
+//    ofColor found = getBlobColor(xCenter, yCenter);
+//    ofColor difference = found - yellow;
     ofxOscMessage m = msgOsc(x,y,_channel,true);
     sender.sendMessage(m);
 }
@@ -180,6 +183,14 @@ void ofApp::draw(){
   ofSetColor(targetColor);
   ofDrawRectangle(0, 0, 64, 64);
   gui.draw();
+    guiPerTrottole.draw();
+    int x = ofGetWindowWidth()-100;
+    int y = ofGetWindowHeight()-100;
+
+    ofDrawRectangle(x,y,100,100);
+    ofDrawBitmapString(CANALE_TARGET, x, y);
+    colors[CANALE_TARGET].set(CANALE_TARGET);
+    
 }
 
 
@@ -199,9 +210,29 @@ cv::Mat ofApp::getROIImage()
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button) {
   targetColor = grabber.getPixels().getColor(x, y);
-  for(int a = 0; a < countoursFinders.size(); a++){
-      countoursFinders[a].setTargetColor(targetColor, trackingColorMode);
-  }
+//  for(int a = 0; a < countoursFinders.size(); a++){
+//      countoursFinders[a].setTargetColor(targetColor, trackingColorMode);
+//  }
+    countoursFinders[CANALE_TARGET].setTargetColor(targetColor, trackingColorMode);
+}
+
+void ofApp::keyPressed(int key){
+    if (key == 49){
+        CANALE_TARGET = 0;
+    } else if (key == 50) {
+        CANALE_TARGET = 1;
+    } else if (key== 51) {
+        CANALE_TARGET = 2;
+    } else if (key== 52) {
+        CANALE_TARGET = 3;
+    } else if (key== 53) {
+        CANALE_TARGET = 4;
+    } else if (key== 54) {
+        CANALE_TARGET = 5;
+    } else if (key== 55) {
+        CANALE_TARGET = 6;
+    }
+    ofLog()<<CANALE_TARGET;
 }
 
 ofColor ofApp::getBlobColor(int x, int y)

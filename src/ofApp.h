@@ -31,6 +31,7 @@ class ofApp : public ofBaseApp{
   ofParameter<float> maxArea;
     
     int NUM_OF_FINDERS = 6;
+    int CANALE_TARGET = 0;
   
   // webcam gui
   ofParameter<int> exp;
@@ -46,15 +47,17 @@ class ofApp : public ofBaseApp{
 
     
   vector<ofxCv::ContourFinder> countoursFinders;
-  vector< ofParameter<float> > thresholds;
-  vector< ofParameter<float> > minAreas;
-  vector< ofParameter<float> > maxAreas;
+  vector< ofParameter<int> > thresholds;
+  vector< ofParameter<int> > minAreas;
+  vector< ofParameter<int> > maxAreas;
   vector< ofParameter<int> > colors;
   ofxCv::ContourFinder contourFinder;
   ofVideoGrabber grabber;
   ofxCv::TrackingColorMode trackingColorMode;
   ofColor targetColor;
   ofxPanel gui;
+ofxPanel guiPerTrottole;
+    void keyPressed(int key);
   ofParameterGroup group;
   ofParameterGroup groupWebcam;
     
@@ -65,10 +68,10 @@ class ofApp : public ofBaseApp{
     //ofParamete<float>
   
   
-  ofParameter<float> ROIx;
-  ofParameter<float> ROIy;
-  ofParameter<float> ROIwidth;
-  ofParameter<float> ROIheight;
+  ofParameter<int> ROIx;
+  ofParameter<int> ROIy;
+  ofParameter<int> ROIwidth;
+  ofParameter<int> ROIheight;
   ofParameter<bool> drawWebCam;
   cv::Mat                   cam_mat;
   cv::Mat                   crop;
