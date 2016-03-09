@@ -13,6 +13,9 @@ void ofApp::setup(){
         setupGrabber();
   ofSetFrameRate(20);
   setupContourFinder();
+    
+    
+    
   setupGUI();
   sender.setup("127.0.0.1", 12345);
 }
@@ -31,38 +34,46 @@ void ofApp::setupGUI()
 {
   gui.setup();
   group.setName("Capture");
-  group.add(threshold.set("Threshold", 50, 0, 255));
-  group.add(minArea.set("Min area", 1, 0, 50));
-  group.add(maxArea.set("Max area", 300, 0, 300));
-  group.add(bInvert.set("Invert", false));
-  group.add(ROIx.set("ROI x", 0, 0, 640));
-  group.add(ROIy.set("ROI y", 0, 0, 480));
-  group.add(ROIwidth.set("ROI width", 100, 10, 640));
-  group.add(ROIheight.set("ROI height", 100, 10, 480));
-  group.add(drawWebCam.set("Draw webcam", true));
+for(int a = 0; a < countoursFinders.size(); a++){
+    group.add(thresholds[a].set("threshold "+ofToString(a), 50,0,255));
+    group.add(minAreas[a].set("Min area "+ofToString(a), 50,0,255));
+    group.add(maxAreas[a].set("Max area "+ofToString(a), 50,0,255));
+  }
 
-  // webcam gui
-  groupWebcam.setName("Webcam");
-  groupWebcam.add(exp.set("exposure", 58,0,255));
-  groupWebcam.add(framerate.set("framerate", 20,0,60));
-  groupWebcam.add(redBalance.set("red", 102,0,255));
-  groupWebcam.add(greenBalance.set("green", 0,0,255));
-  groupWebcam.add(blueBalance.set("blue", 123,0,255));
-  groupWebcam.add(brightness.set("bright", 0,0,255));
-  groupWebcam.add(gain.set("gain", 0,0,60));
-  
-  exp.addListener(this,&ofApp::gainChanged);
-  framerate.addListener(this,&ofApp::gainChanged);
-  redBalance.addListener(this,&ofApp::gainChanged);
-  greenBalance.addListener(this,&ofApp::gainChanged);
-  blueBalance.addListener(this,&ofApp::gainChanged);
-  brightness.addListener(this,&ofApp::gainChanged);
-  gain.addListener(this,&ofApp::gainChanged);
-    
-
+  setupMaskGui(group);
+  setupWebcamGui(groupWebcam);
   gui.add(group);
   gui.add(groupWebcam);
   gui.loadFromFile("settings.xml");
+}
+
+void ofApp::setupMaskGui(ofParameterGroup &_group){
+    _group.add(ROIx.set("ROI x", 0, 0, 640));
+    _group.add(ROIy.set("ROI y", 0, 0, 480));
+    _group.add(ROIwidth.set("ROI width", 100, 10, 640));
+    _group.add(ROIheight.set("ROI height", 100, 10, 480));
+    _group.add(drawWebCam.set("Draw webcam", true));
+    _group.add(bInvert.set("Invert", true));
+}
+
+void ofApp::setupWebcamGui(ofParameterGroup &_group){
+    // webcam gui
+    _group.setName("Webcam");
+    _group.add(exp.set("exposure", 58,0,255));
+    _group.add(framerate.set("framerate", 20,0,60));
+    _group.add(redBalance.set("red", 102,0,255));
+    _group.add(greenBalance.set("green", 0,0,255));
+    _group.add(blueBalance.set("blue", 123,0,255));
+    _group.add(brightness.set("bright", 0,0,255));
+    _group.add(gain.set("gain", 0,0,60));
+    
+    exp.addListener(this,&ofApp::gainChanged);
+    framerate.addListener(this,&ofApp::gainChanged);
+    redBalance.addListener(this,&ofApp::gainChanged);
+    greenBalance.addListener(this,&ofApp::gainChanged);
+    blueBalance.addListener(this,&ofApp::gainChanged);
+    brightness.addListener(this,&ofApp::gainChanged);
+    gain.addListener(this,&ofApp::gainChanged);
 }
 
 void ofApp::gainChanged(int & circleResolution){
@@ -71,6 +82,15 @@ void ofApp::gainChanged(int & circleResolution){
 
 void ofApp::setupContourFinder()
 {
+    for(int a = 0 ; a <= NUM_OF_FINDERS; a++)
+    {
+        ofxCv::ContourFinder temp;
+        countoursFinders.push_back(temp);
+        thresholds.push_back(128);
+        minAreas.push_back(128);
+        maxAreas.push_back(128);
+        
+    }
   contourFinder.setMinAreaRadius(1);
   contourFinder.setMaxAreaRadius(200);
   trackingColorMode = TRACK_COLOR_RGB;
@@ -82,35 +102,41 @@ void ofApp::update(){
   grabber.update();
     
   if(grabber.isFrameNew()) {
-      setupFinder();
-    searchBlobs(contourFinder);
+      for(int a = 0; a < countoursFinders.size(); a++){
+        setupFinder(countoursFinders[a]);
+        searchBlobs(countoursFinders[a]);
+      }
   }
 }
 
-void ofApp::setupFinder(){
-    contourFinder.setMaxArea(maxArea);
-    contourFinder.setMinArea(minArea);
-    contourFinder.setThreshold(threshold);
-    contourFinder.setSimplify(true);
-    contourFinder.setInvert(bInvert);
-    contourFinder.findContours(getROIImage());
+void ofApp::setupFinder(ofxCv::ContourFinder &_finder){
+    _finder.setMaxArea(maxArea);
+    _finder.setMinArea(minArea);
+    _finder.setThreshold(threshold);
+    _finder.setSimplify(true);
+    _finder.setInvert(bInvert);
+    _finder.findContours(getROIImage());
 }
 
-void ofApp::searchBlobs(ofxCv::ContourFinder finder){
-    int totBlob = finder.getContours().size();
+void ofApp::searchBlobs(ofxCv::ContourFinder &_finder){
+    int totBlob = _finder.getContours().size();
     for(int a = 0; a < totBlob; a++)
     {
-        float xCenter = finder.getCentroid(a).x/ROIwidth;
-        float yCenter = finder.getCentroid(a).y/ROIwidth;
-        float x = xCenter * 100;
-        float y = yCenter * 100;
-        ofColor yellow = ofColor(0,0,200);
-        ofColor found = getBlobColor(xCenter, yCenter);
-        ofColor difference = found - yellow;
-        cout << "difference: " << difference << endl;
-        ofxOscMessage m = msgOsc(x,y,a,1);
-        sender.sendMessage(m);
+        getCenterAndSendOsc(_finder, a);
     }
+}
+
+void ofApp::getCenterAndSendOsc(ofxCv::ContourFinder _finder, int _a){
+    float xCenter = _finder.getCentroid(_a).x/ROIwidth;
+    float yCenter = _finder.getCentroid(_a).y/ROIwidth;
+    float x = xCenter * 100;
+    float y = yCenter * 100;
+    ofColor yellow = ofColor(0,0,200);
+    ofColor found = getBlobColor(xCenter, yCenter);
+    ofColor difference = found - yellow;
+    cout << "difference: " << difference << endl;
+    ofxOscMessage m = msgOsc(x,y,_a,1);
+    sender.sendMessage(m);
 }
 
 int ofApp::getBlobColorIndex(ofColor color)
