@@ -16,7 +16,7 @@ class ofApp : public ofBaseApp{
 		void mousePressed(int x, int y, int button);
 
         void gainChanged(int & circleResolution);
-        void colorChanged(int & colorNew);
+        void colorChanged(ofColor & colorNew);
         void setupGrabber();
         void searchBlobs(ofxCv::ContourFinder &_finder, int i);
         void setupFinder(ofxCv::ContourFinder &_finder, int a);
@@ -41,22 +41,24 @@ class ofApp : public ofBaseApp{
   ofParameter<int> blueBalance;
   ofParameter<int> brightness;
   ofParameter<int> gain;
+  ofParameter<int> contrast;
 
 
   ofParameter<bool> bInvert;
+  ofParameter<bool>PICK_COLOR;
 
     
   vector<ofxCv::ContourFinder> countoursFinders;
   vector< ofParameter<int> > thresholds;
   vector< ofParameter<int> > minAreas;
   vector< ofParameter<int> > maxAreas;
-  vector< ofParameter<int> > colors;
+  vector< ofParameter<ofColor> > colors;
   ofxCv::ContourFinder contourFinder;
   ofVideoGrabber grabber;
   ofxCv::TrackingColorMode trackingColorMode;
   ofColor targetColor;
   ofxPanel gui;
-ofxPanel guiPerTrottole;
+  ofxPanel guiPerTrottole;
     void keyPressed(int key);
   ofParameterGroup group;
   ofParameterGroup groupWebcam;
@@ -64,6 +66,7 @@ ofxPanel guiPerTrottole;
   void setupGUI();
   cv::Mat   getROIImage();
   ofxOscSender sender;
+      ofxOscSender sender2;
   ofxOscBundle bundle;
     //ofParamete<float>
   

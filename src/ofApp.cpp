@@ -18,6 +18,8 @@ void ofApp::setup(){
     
   setupGUI();
   sender.setup("127.0.0.1", 12345);
+  //sender per visual mauro
+  sender2.setup("169.254.129.61", 12346);
 }
 
 void ofApp::setupGrabber(){
@@ -27,6 +29,7 @@ void ofApp::setupGrabber(){
     grabber.getGrabber<ofxPS3EyeGrabber>()->setBlueBalance(blueBalance);
     grabber.getGrabber<ofxPS3EyeGrabber>()->setGreenBalance(greenBalance);
     grabber.getGrabber<ofxPS3EyeGrabber>()->setBrightness(brightness);
+    grabber.getGrabber<ofxPS3EyeGrabber>()->setContrast(contrast);
     grabber.getGrabber<ofxPS3EyeGrabber>()->setGain(gain);
 }
 
@@ -77,6 +80,9 @@ void ofApp::setupWebcamGui(ofParameterGroup &_group){
     _group.add(blueBalance.set("blue", 123,0,255));
     _group.add(brightness.set("bright", 0,0,255));
     _group.add(gain.set("gain", 0,0,60));
+    _group.add(PICK_COLOR.set("pick_color", false));
+    _group.add(contrast.set("Contrast",10,0,100));
+
     
     exp.addListener(this,&ofApp::gainChanged);
     framerate.addListener(this,&ofApp::gainChanged);
@@ -85,11 +91,11 @@ void ofApp::setupWebcamGui(ofParameterGroup &_group){
     blueBalance.addListener(this,&ofApp::gainChanged);
     brightness.addListener(this,&ofApp::gainChanged);
     gain.addListener(this,&ofApp::gainChanged);
-    
+    contrast.addListener(this,&ofApp::gainChanged);
       gui.add(_group);
 }
 
-void ofApp::colorChanged(int & colorNew){
+void ofApp::colorChanged(ofColor & colorNew){
     
 }
 
@@ -105,7 +111,9 @@ void ofApp::setupContourFinder(){
         thresholds.push_back(128);
         minAreas.push_back(128);
         maxAreas.push_back(128);
-        colors.push_back(1);
+        ofColor colore;
+        colore.set(125, 124, 0);
+        colors.push_back(colore);
         
     }
   contourFinder.setMinAreaRadius(1);
@@ -153,6 +161,7 @@ void ofApp::getCenterAndSendOsc(ofxCv::ContourFinder _finder, int _numCentroid, 
 //    ofColor difference = found - yellow;
     ofxOscMessage m = msgOsc(x,y,_channel,true);
     sender.sendMessage(m);
+    sender2.sendMessage(m);
 }
 
 
@@ -168,10 +177,7 @@ void ofApp::draw(){
   ofTranslate(ROIx, ROIy);
   ofDrawRectangle(0, 0, ROIwidth, ROIheight);
     for(int a = 0; a < countoursFinders.size(); a++){
-        ofColor color;
-        color.setHsb(colors[a], 255, 255);
-        
-        ofSetColor(color);
+        ofSetColor(colors[a]);
         countoursFinders[a].draw();
     }
   
@@ -183,13 +189,21 @@ void ofApp::draw(){
   ofSetColor(targetColor);
   ofDrawRectangle(0, 0, 64, 64);
   gui.draw();
-    guiPerTrottole.draw();
-    int x = ofGetWindowWidth()-100;
-    int y = ofGetWindowHeight()-100;
-
-    ofDrawRectangle(x,y,100,100);
-    ofDrawBitmapString(CANALE_TARGET, x, y);
-    colors[CANALE_TARGET].set(CANALE_TARGET);
+  guiPerTrottole.draw();
+    
+    // QUAD DEBUG
+    int sizeQuad = 20;
+    for (int i=0; i<NUM_OF_FINDERS; i++) {
+        ofSetColor(colors[i]);
+        int x = ofGetWindowWidth()-sizeQuad*(i+1);
+        int y = ofGetWindowHeight()-sizeQuad;
+        ofDrawRectangle(x,y,sizeQuad,sizeQuad);
+        ofDrawBitmapString(i, x, y);
+    }
+    
+    // scritta che spiega il canale attivo
+    ofSetColor(colors[CANALE_TARGET]);
+    ofDrawBitmapString("CANALE ATTIVO: "+ofToString(CANALE_TARGET), ofGetWindowWidth()-200, ofGetWindowHeight()-200);
     
 }
 
@@ -209,11 +223,11 @@ cv::Mat ofApp::getROIImage()
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button) {
-  targetColor = grabber.getPixels().getColor(x, y);
-//  for(int a = 0; a < countoursFinders.size(); a++){
-//      countoursFinders[a].setTargetColor(targetColor, trackingColorMode);
-//  }
-    countoursFinders[CANALE_TARGET].setTargetColor(targetColor, trackingColorMode);
+    if (PICK_COLOR) {
+        targetColor = grabber.getPixels().getColor(x, y);
+        countoursFinders[CANALE_TARGET].setTargetColor(targetColor, trackingColorMode);
+        colors[CANALE_TARGET] = targetColor;
+    }
 }
 
 void ofApp::keyPressed(int key){
@@ -232,7 +246,16 @@ void ofApp::keyPressed(int key){
     } else if (key== 55) {
         CANALE_TARGET = 6;
     }
+    ofLog()<<"CANALE:";
     ofLog()<<CANALE_TARGET;
+    
+    if (key== 'p'){
+        if (PICK_COLOR == true) {
+            PICK_COLOR = false;
+        } else{
+            PICK_COLOR = true;
+        }
+    }
 }
 
 ofColor ofApp::getBlobColor(int x, int y)
