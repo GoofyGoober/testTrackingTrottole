@@ -8,18 +8,16 @@ void ofApp::setup(){
   grabber.setGrabber(std::make_shared<ofxPS3EyeGrabber>());
 
   grabber.setup(640, 480);
-    grabber.getGrabber<ofxPS3EyeGrabber>()->setAutogain(false);
-    grabber.getGrabber<ofxPS3EyeGrabber>()->setAutoWhiteBalance(false);
-        setupGrabber();
+  grabber.getGrabber<ofxPS3EyeGrabber>()->setAutogain(false);
+  grabber.getGrabber<ofxPS3EyeGrabber>()->setAutoWhiteBalance(false);
+  setupGrabber();
   ofSetFrameRate(20);
   setupContourFinder();
-    
-    
     
   setupGUI();
   sender.setup("127.0.0.1", 12345);
   //sender per visual mauro
-  sender2.setup("169.254.129.61", 12346);
+  sender2.setup("127.0.0.1", 12346);
 }
 
 void ofApp::setupGrabber(){
@@ -140,6 +138,7 @@ void ofApp::setupFinder(ofxCv::ContourFinder &_finder, int a){
     _finder.setThreshold(thresholds[a]);
     _finder.setSimplify(true);
     _finder.setInvert(bInvert);
+    _finder.setTargetColor(colors[a]);
     _finder.findContours(getROIImage());
 }
 
@@ -159,9 +158,11 @@ void ofApp::getCenterAndSendOsc(ofxCv::ContourFinder _finder, int _numCentroid, 
 //    ofColor yellow = ofColor(0,0,200);
 //    ofColor found = getBlobColor(xCenter, yCenter);
 //    ofColor difference = found - yellow;
+    if (x>1 and y>1){
     ofxOscMessage m = msgOsc(x,y,_channel,true);
     sender.sendMessage(m);
     sender2.sendMessage(m);
+    }
 }
 
 
@@ -266,6 +267,7 @@ ofColor ofApp::getBlobColor(int x, int y)
 ofxOscMessage ofApp::msgOsc(int x, int y, int channel, bool accesoSpento){
   ofxOscMessage m;
   m.setAddress("/blob_"+ofToString(channel));
+
   m.addInt32Arg(x);
   m.addInt32Arg(y);
     if (accesoSpento){
