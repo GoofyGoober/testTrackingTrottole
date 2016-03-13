@@ -8,8 +8,8 @@ void ofApp::setup(){
   grabber.setGrabber(std::make_shared<ofxPS3EyeGrabber>());
 
   grabber.setup(640, 480);
-  grabber.getGrabber<ofxPS3EyeGrabber>()->setAutogain(false);
-  grabber.getGrabber<ofxPS3EyeGrabber>()->setAutoWhiteBalance(false);
+  //grabber.getGrabber<ofxPS3EyeGrabber>()->setAutogain(false);
+  //grabber.getGrabber<ofxPS3EyeGrabber>()->setAutoWhiteBalance(false);
   setupGrabber();
   ofSetFrameRate(20);
   setupContourFinder();
@@ -158,10 +158,10 @@ void ofApp::getCenterAndSendOsc(ofxCv::ContourFinder _finder, int _numCentroid, 
 //    ofColor yellow = ofColor(0,0,200);
 //    ofColor found = getBlobColor(xCenter, yCenter);
 //    ofColor difference = found - yellow;
-    if (x>1 and y>1){
-    ofxOscMessage m = msgOsc(x,y,_channel,true);
-    sender.sendMessage(m);
-    sender2.sendMessage(m);
+    if (x>5 and y>5 and x < ROIwidth-5 and y < ROIheight - 5){
+        ofxOscMessage m = msgOsc(x,y,_channel,true);
+        sender.sendMessage(m);
+        sender2.sendMessage(m);
     }
 }
 
@@ -205,7 +205,14 @@ void ofApp::draw(){
     // scritta che spiega il canale attivo
     ofSetColor(colors[CANALE_TARGET]);
     ofDrawBitmapString("CANALE ATTIVO: "+ofToString(CANALE_TARGET), ofGetWindowWidth()-200, ofGetWindowHeight()-200);
+
+    std::stringstream ss;
+
+    ss << " App FPS: " << ofGetFrameRate() << std::endl;
+    ss << " Cam FPS: " << grabber.getGrabber<ofxPS3EyeGrabber>()->getFPS()  << std::endl;
+    ss << "Real FPS: " << grabber.getGrabber<ofxPS3EyeGrabber>()->getActualFPS();
     
+    ofDrawBitmapStringHighlight(ss.str(), ofPoint(10, 15));
 }
 
 
